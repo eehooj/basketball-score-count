@@ -7,6 +7,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
   const { id } = use(params);
   const { gameState } = useGame(id);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // 전자 버저음 생성 및 재생 함수
   const playBuzzer = useCallback(() => {
@@ -16,8 +17,8 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
 
-    oscillator.type = "square"; // 거친 전자음 느낌
-    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); // 낮은 주파수
+    oscillator.type = "square";
+    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
     oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1.5);
 
     gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
@@ -60,7 +61,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
       overflow: "hidden",
       position: "relative"
     }}>
-      {/* 사운드 활성화 버튼 (브라우저 정책상 사용자 클릭 필요) */}
+      {/* 사운드 활성화 버튼 */}
       {!audioEnabled && (
         <div style={{
           position: "absolute",
@@ -80,24 +81,85 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
         </div>
       )}
 
-      {/* 상단 정보 (쿼터 등) */}
-      <div style={{ fontSize: "3rem", marginBottom: "1rem", color: "#aaa" }}>PERIOD {gameState.period}</div>
+      {/* 쿼터 점수 기록 팝업 (오버레이) */}
+      {showHistory && (
+        <div 
+          onClick={() => setShowHistory(false)}
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.9)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 90
+          }}
+        >
+          <div style={{ 
+            backgroundColor: "#222", 
+            padding: "3rem", 
+            borderRadius: "20px", 
+            minWidth: "400px",
+            border: "2px solid #444"
+          }}>
+            <h2 style={{ textAlign: "center", color: "#ff0", marginBottom: "2rem", fontSize: "2.5rem" }}>PERIOD SCORES</h2>
+            <table style={{ width: "100%", fontSize: "2rem", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ borderBottom: "2px solid #444" }}>
+                  <th style={{ padding: "1rem" }}>PER</th>
+                  <th style={{ padding: "1rem", color: "#0070f3" }}>{gameState.homeName || "HOME"}</th>
+                  <th style={{ padding: "1rem", color: "#ff4444" }}>{gameState.awayName || "AWAY"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(gameState.periodScores || []).map((score, index) => (
+                  <tr key={index} style={{ borderBottom: "1px solid #333", textAlign: "center" }}>
+                    <td style={{ padding: "1rem" }}>{index + 1}Q</td>
+                    <td style={{ padding: "1rem" }}>{score.home}</td>
+                    <td style={{ padding: "1rem" }}>{score.away}</td>
+                  </tr>
+                ))}
+                {/* 현재 진행 중인 쿼터 점수 */}
+                <tr style={{ textAlign: "center", color: "#aaa" }}>
+                  <td style={{ padding: "1rem" }}>{gameState.period}Q*</td>
+                  <td style={{ padding: "1rem" }}>{gameState.homeScore}</td>
+                  <td style={{ padding: "1rem" }}>{gameState.awayScore}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p style={{ textAlign: "center", marginTop: "2rem", color: "#666" }}>화면을 클릭하면 닫힙니다.</p>
+          </div>
+        </div>
+      )}
+
+      {/* 상단 정보 (쿼터 등) - 클릭 시 히스토리 토글 */}
+      <div 
+        onClick={() => setShowHistory(true)}
+        style={{ 
+          fontSize: "3rem", 
+          marginBottom: "1rem", 
+          color: "#aaa", 
+          cursor: "pointer",
+          border: "1px solid #333",
+          padding: "0.5rem 2rem",
+          borderRadius: "10px"
+        }}
+      >
+        PERIOD {gameState.period} <span style={{ fontSize: "1.2rem", color: "#555" }}>(Click for Info)</span>
+      </div>
       
       {/* 메인 점수판 레이아웃 */}
       <div style={{ display: "flex", gap: "5rem", alignItems: "center", justifyContent: "center", width: "100%" }}>
         
         {/* HOME 팀 */}
         <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "4rem", color: "#0070f3" }}>HOME</div>
+          <div style={{ fontSize: "4rem", color: "#0070f3" }}>{gameState.homeName || "HOME"}</div>
           <div style={{ fontSize: "18rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.homeScore}</div>
         </div>
 
         {/* 중앙 타이머 섹션 */}
         <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-          {/* 메인 게임 타이머 */}
           <div style={{ fontSize: "12rem", lineHeight: 1, color: "#fff" }}>{formatTime(gameState.timer)}</div>
-          
-          {/* 24초 공격 제한 시간 (Shot Clock) */}
           <div style={{ 
             fontSize: "10rem", 
             color: gameState.shotClock <= 0 ? "#ff0000" : (gameState.shotClock <= 5 ? "#ff0000" : "#ffff00"), 
@@ -114,13 +176,12 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
 
         {/* AWAY 팀 */}
         <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "4rem", color: "#ff4444" }}>AWAY</div>
+          <div style={{ fontSize: "4rem", color: "#ff4444" }}>{gameState.awayName || "AWAY"}</div>
           <div style={{ fontSize: "18rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.awayScore}</div>
         </div>
 
       </div>
 
-      {/* 하단 경기 코드 정보 */}
       <div style={{ marginTop: "4rem", color: "#333", fontSize: "1.5rem" }}>GAME CODE: {id}</div>
     </main>
   );

@@ -5,7 +5,7 @@ import { use } from "react";
 
 export default function ControlPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { gameState, updateScore, toggleTimer, updateTimer, resetShotClock, undo, resetGame } = useGame(id);
+  const { gameState, updateScore, updateTeamName, toggleTimer, updateTimer, resetShotClock, resetGame, nextPeriod } = useGame(id, true);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -13,29 +13,93 @@ export default function ControlPage({ params }: { params: Promise<{ id: string }
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  const handleNameChange = (team: "home" | "away") => {
+    const currentName = team === "home" ? gameState.homeName : gameState.awayName;
+    const newName = prompt("팀 이름을 입력하세요:", currentName);
+    if (newName && newName.trim()) {
+      updateTeamName(team, newName.trim());
+    }
+  };
+
   return (
     <main style={{ padding: "1rem", maxWidth: "400px", margin: "0 auto", textAlign: "center" }}>
       <h2 style={{ marginBottom: "1.5rem" }}>컨트롤러 (CODE: {id})</h2>
 
+      {/* 쿼터 관리 섹션 */}
+      <div style={{ backgroundColor: "#f0f0f0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>PERIOD {gameState.period}</div>
+        <button onClick={() => {
+          if(confirm("다음 쿼터로 넘어가시겠습니까? 현재 점수가 기록됩니다.")) nextPeriod();
+        }} style={{ padding: "0.5rem 1rem", backgroundColor: "#0070f3", color: "#fff", border: "none", borderRadius: "6px" }}>
+          NEXT PERIOD
+        </button>
+      </div>
+
       {/* 점수 조작 섹션 */}
-      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "2rem" }}>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ color: "#0070f3" }}>HOME</h3>
-          <p style={{ fontSize: "3rem", fontWeight: "bold", margin: "0.5rem 0" }}>{gameState.homeScore}</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem" }}>
-            <button onClick={() => updateScore("home", 1)} style={{ padding: "1.2rem", fontSize: "1.2rem" }}>+1</button>
-            <button onClick={() => updateScore("home", 2)} style={{ padding: "1.2rem", fontSize: "1.2rem" }}>+2</button>
-            <button onClick={() => updateScore("home", 3)} style={{ padding: "1.2rem", fontSize: "1.2rem" }}>+3</button>
+      <div style={{ display: "flex", justifyContent: "space-around", marginBottom: "2rem", gap: "1rem" }}>
+        {/* HOME 팀 */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <h3 
+            onClick={() => handleNameChange("home")}
+            style={{ color: "#0070f3", cursor: "pointer", textDecoration: "underline", margin: 0 }}
+          >
+            {gameState.homeName || "HOME"}
+          </h3>
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center", 
+            backgroundColor: "#f8f9fa", 
+            padding: "1rem", 
+            borderRadius: "15px",
+            border: "2px solid #0070f3"
+          }}>
+            <button 
+              onClick={() => updateScore("home", 1)} 
+              style={{ width: "100%", padding: "1rem", fontSize: "2rem", backgroundColor: "#0070f3", color: "white", borderRadius: "10px", border: "none" }}
+            >
+              ＋
+            </button>
+            <p style={{ fontSize: "4rem", fontWeight: "bold", margin: "0.5rem 0", color: "#333" }}>{gameState.homeScore}</p>
+            <button 
+              onClick={() => updateScore("home", -1)} 
+              style={{ width: "100%", padding: "1rem", fontSize: "2rem", backgroundColor: "#eee", color: "#333", borderRadius: "10px", border: "1px solid #ccc" }}
+            >
+              －
+            </button>
           </div>
         </div>
-        <div style={{ width: "20px" }}></div>
-        <div style={{ flex: 1 }}>
-          <h3 style={{ color: "#ff4444" }}>AWAY</h3>
-          <p style={{ fontSize: "3rem", fontWeight: "bold", margin: "0.5rem 0" }}>{gameState.awayScore}</p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "0.5rem" }}>
-            <button onClick={() => updateScore("away", 1)} style={{ padding: "1.2rem", fontSize: "1.2rem" }}>+1</button>
-            <button onClick={() => updateScore("away", 2)} style={{ padding: "1.2rem", fontSize: "1.2rem" }}>+2</button>
-            <button onClick={() => updateScore("away", 3)} style={{ padding: "1.2rem", fontSize: "1.2rem" }}>+3</button>
+
+        {/* AWAY 팀 */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <h3 
+            onClick={() => handleNameChange("away")}
+            style={{ color: "#ff4444", cursor: "pointer", textDecoration: "underline", margin: 0 }}
+          >
+            {gameState.awayName || "AWAY"}
+          </h3>
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            alignItems: "center", 
+            backgroundColor: "#f8f9fa", 
+            padding: "1rem", 
+            borderRadius: "15px",
+            border: "2px solid #ff4444"
+          }}>
+            <button 
+              onClick={() => updateScore("away", 1)} 
+              style={{ width: "100%", padding: "1rem", fontSize: "2rem", backgroundColor: "#ff4444", color: "white", borderRadius: "10px", border: "none" }}
+            >
+              ＋
+            </button>
+            <p style={{ fontSize: "4rem", fontWeight: "bold", margin: "0.5rem 0", color: "#333" }}>{gameState.awayScore}</p>
+            <button 
+              onClick={() => updateScore("away", -1)} 
+              style={{ width: "100%", padding: "1rem", fontSize: "2rem", backgroundColor: "#eee", color: "#333", borderRadius: "10px", border: "1px solid #ccc" }}
+            >
+              －
+            </button>
           </div>
         </div>
       </div>
@@ -65,22 +129,16 @@ export default function ControlPage({ params }: { params: Promise<{ id: string }
 
         <div style={{ display: "flex", gap: "1rem" }}>
           <button onClick={toggleTimer} style={{ 
-            flex: 2,
+            flex: 1,
             padding: "1.5rem", 
             fontSize: "1.5rem", 
             backgroundColor: gameState.isRunning ? "#ff4444" : "#44ff44",
-            color: gameState.isRunning ? "white" : "black"
+            color: gameState.isRunning ? "white" : "black",
+            borderRadius: "10px",
+            border: "none",
+            fontWeight: "bold"
           }}>
             {gameState.isRunning ? "STOP" : "START"}
-          </button>
-          <button onClick={undo} style={{ 
-            flex: 1,
-            padding: "1rem", 
-            fontSize: "1.2rem", 
-            backgroundColor: "#333", 
-            color: "white" 
-          }}>
-            UNDO
           </button>
         </div>
       </div>
