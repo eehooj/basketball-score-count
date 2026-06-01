@@ -1,46 +1,67 @@
 "use client";
 
 import { useGame } from "@/hooks/useGame";
-import { use, useEffect, useState, useCallback } from "react";
+import { use, useEffect, useState, useCallback, useRef } from "react";
 
 export default function BoardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { gameState } = useGame(id);
   const [audioEnabled, setAudioEnabled] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
-  // 전자 버저음 생성 및 재생 함수
-  const playBuzzer = useCallback(() => {
+  // "삐-" 소리 (전자식 알람) 생성 및 재생 함수
+  const playAlert = useCallback(async () => {
     if (typeof window === "undefined") return;
     
-    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    const audioCtx = audioCtxRef.current;
+    if (audioCtx.state === "suspended") {
+      await audioCtx.resume();
+    }
+
+    // 강력한 전자음을 위해 square 파형 사용
+    const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
 
-    oscillator.type = "square";
-    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 1.5);
+    osc.type = "square";
+    // "삐-" 하는 선명한 고음 (1000Hz)
+    osc.frequency.setValueAtTime(1000, audioCtx.currentTime);
 
-    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+    // 볼륨 설정: 선명하게 들리도록 높은 볼륨 유지
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.02); // 아주 빠르게 피크 도달
+    gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime + 1.3); // 1.3초 동안 일정하게 유지 ("삐----")
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5); // 끝에 살짝 여운
 
-    oscillator.connect(gainNode);
+    osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
 
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 1.5);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 1.5);
   }, []);
+
+  const handleEnableAudio = async () => {
+    setAudioEnabled(true);
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    await audioCtxRef.current.resume();
+  };
 
   useEffect(() => {
     const handleBuzzer = (e: any) => {
       if (e.detail?.roomId === id && audioEnabled) {
-        playBuzzer();
+        playAlert();
       }
     };
 
     window.addEventListener("game_buzzer", handleBuzzer);
     return () => window.removeEventListener("game_buzzer", handleBuzzer);
-  }, [id, audioEnabled, playBuzzer]);
+  }, [id, audioEnabled, playAlert]);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
@@ -73,7 +94,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
           zIndex: 100
         }}>
           <button 
-            onClick={() => setAudioEnabled(true)}
+            onClick={handleEnableAudio}
             style={{ padding: "2rem", fontSize: "2rem", backgroundColor: "#f00", color: "#fff", cursor: "pointer" }}
           >
             소리 켜기 (Buzzer Enable)
@@ -102,11 +123,11 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
             minWidth: "400px",
             border: "2px solid #444"
           }}>
-            <h2 style={{ textAlign: "center", color: "#ff0", marginBottom: "2rem", fontSize: "2.5rem" }}>PERIOD SCORES</h2>
+            <h2 style={{ textAlign: "center", color: "#ff0", marginBottom: "2rem", fontSize: "2.5rem" }}>QUARTER SCORES</h2>
             <table style={{ width: "100%", fontSize: "2rem", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ borderBottom: "2px solid #444" }}>
-                  <th style={{ padding: "1rem" }}>PER</th>
+                  <th style={{ padding: "1rem" }}>QTR</th>
                   <th style={{ padding: "1rem", color: "#0070f3" }}>{gameState.homeName || "HOME"}</th>
                   <th style={{ padding: "1rem", color: "#ff4444" }}>{gameState.awayName || "AWAY"}</th>
                 </tr>
@@ -145,7 +166,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
           borderRadius: "10px"
         }}
       >
-        PERIOD {gameState.period} <span style={{ fontSize: "1.2rem", color: "#555" }}>(Click for Info)</span>
+        QUARTER {gameState.period} <span style={{ fontSize: "1.2rem", color: "#555" }}>(Click for Info)</span>
       </div>
       
       {/* 메인 점수판 레이아웃 */}
@@ -154,7 +175,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
         {/* HOME 팀 */}
         <div style={{ textAlign: "center", flex: 1 }}>
           <div style={{ fontSize: "4rem", color: "#0070f3" }}>{gameState.homeName || "HOME"}</div>
-          <div style={{ fontSize: "18rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.homeScore}</div>
+          <div style={{ fontSize: "22rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.homeScore}</div>
         </div>
 
         {/* 중앙 타이머 섹션 */}
@@ -177,7 +198,7 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
         {/* AWAY 팀 */}
         <div style={{ textAlign: "center", flex: 1 }}>
           <div style={{ fontSize: "4rem", color: "#ff4444" }}>{gameState.awayName || "AWAY"}</div>
-          <div style={{ fontSize: "18rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.awayScore}</div>
+          <div style={{ fontSize: "22rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.awayScore}</div>
         </div>
 
       </div>

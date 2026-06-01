@@ -23,15 +23,15 @@ export default function ControlPage({ params }: { params: Promise<{ id: string }
 
   return (
     <main style={{ padding: "1rem", maxWidth: "400px", margin: "0 auto", textAlign: "center" }}>
-      <h2 style={{ marginBottom: "1.5rem" }}>컨트롤러 (CODE: {id})</h2>
+      <p style={{ marginBottom: "1rem", fontSize: "0.9rem", color: "#666" }}>컨트롤러 (CODE: {id})</p>
 
       {/* 쿼터 관리 섹션 */}
       <div style={{ backgroundColor: "#f0f0f0", padding: "1rem", borderRadius: "12px", marginBottom: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>PERIOD {gameState.period}</div>
+        <div style={{ fontSize: "1.2rem", fontWeight: "bold" }}>QUARTER {gameState.period}</div>
         <button onClick={() => {
           if(confirm("다음 쿼터로 넘어가시겠습니까? 현재 점수가 기록됩니다.")) nextPeriod();
         }} style={{ padding: "0.5rem 1rem", backgroundColor: "#0070f3", color: "#fff", border: "none", borderRadius: "6px" }}>
-          NEXT PERIOD
+          NEXT QUARTER
         </button>
       </div>
 

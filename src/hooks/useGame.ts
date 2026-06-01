@@ -14,6 +14,7 @@ export interface GameState {
   period: number;
   isRunning: boolean;
   periodScores: { home: number; away: number }[];
+  lastBuzzer?: number;
 }
 
 const initialGameState: GameState = {
@@ -26,6 +27,7 @@ const initialGameState: GameState = {
   period: 1,
   isRunning: false,
   periodScores: [],
+  lastBuzzer: 0,
 };
 
 export function useGame(roomId: string, isController: boolean = false) {
@@ -87,12 +89,11 @@ export function useGame(roomId: string, isController: boolean = false) {
             }
           }
 
-          await saveState(next);
-
           if (buzzerTriggered) {
-            // 로컬 알림 (부저)
-            window.dispatchEvent(new CustomEvent("game_buzzer", { detail: { roomId: id } }));
+            next.lastBuzzer = Date.now();
           }
+
+          await saveState(next);
         }
       }, 1000);
     }
@@ -101,6 +102,15 @@ export function useGame(roomId: string, isController: boolean = false) {
       if (interval) clearInterval(interval);
     };
   }, [isController, gameState.isRunning, id, saveState, gameRef, gameState]);
+
+  // 부저 이벤트 감지 (모든 클라이언트)
+  const lastBuzzerRef = useRef(0);
+  useEffect(() => {
+    if (gameState.lastBuzzer && gameState.lastBuzzer > lastBuzzerRef.current) {
+      window.dispatchEvent(new CustomEvent("game_buzzer", { detail: { roomId: id } }));
+      lastBuzzerRef.current = gameState.lastBuzzer;
+    }
+  }, [gameState.lastBuzzer, id]);
 
   const updateScore = useCallback((team: "home" | "away", delta: number) => {
     const key = team === "home" ? "homeScore" : "awayScore";
