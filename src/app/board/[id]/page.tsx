@@ -157,53 +157,70 @@ export default function BoardPage({ params }: { params: Promise<{ id: string }> 
       <div 
         onClick={() => setShowHistory(true)}
         style={{ 
-          fontSize: "3rem", 
-          marginBottom: "1rem", 
+          fontSize: "min(4vh, 3rem)", 
+          marginBottom: "1vh", 
           color: "#aaa", 
           cursor: "pointer",
           border: "1px solid #333",
-          padding: "0.5rem 2rem",
+          padding: "0.5vh 2vw",
           borderRadius: "10px"
         }}
       >
-        QUARTER {gameState.period} <span style={{ fontSize: "1.2rem", color: "#555" }}>(Click for Info)</span>
+        QUARTER {gameState.period} <span style={{ fontSize: "0.4em", color: "#555" }}>(Click for Info)</span>
       </div>
       
       {/* 메인 점수판 레이아웃 */}
-      <div style={{ display: "flex", gap: "5rem", alignItems: "center", justifyContent: "center", width: "100%" }}>
+      <div style={{ 
+        display: "flex", 
+        gap: "2vw", 
+        alignItems: "center", 
+        justifyContent: "center", 
+        width: "95vw",
+        maxWidth: "1400px" 
+      }}>
         
         {/* HOME 팀 */}
-        <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "4rem", color: "#0070f3" }}>{gameState.homeName || "HOME"}</div>
-          <div style={{ fontSize: "22rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.homeScore}</div>
+        <div style={{ textAlign: "center", flex: 1.4 }}>
+          <div style={{ fontSize: "min(5vw, 3rem)", color: "#0070f3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "1vh" }}>
+            {gameState.homeName || "HOME"}
+          </div>
+          <div style={{ fontSize: "min(40vw, 42vh, 32rem)", fontWeight: "bold", color: "#f00", lineHeight: 0.9 }}>
+            {gameState.homeScore}
+          </div>
         </div>
 
         {/* 중앙 타이머 섹션 */}
-        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "2rem" }}>
-          <div style={{ fontSize: "12rem", lineHeight: 1, color: "#fff" }}>{formatTime(gameState.timer)}</div>
+        <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: "1vh", flex: 1.2 }}>
+          <div style={{ fontSize: "min(16vw, 16vh, 14rem)", lineHeight: 1, color: "#fff", fontFamily: "monospace" }}>
+            {formatTime(gameState.timer)}
+          </div>
           <div style={{ 
-            fontSize: "10rem", 
+            fontSize: "min(14vw, 14vh, 12rem)", 
             color: gameState.shotClock <= 0 ? "#ff0000" : (gameState.shotClock <= 5 ? "#ff0000" : "#ffff00"), 
-            border: "4px solid",
+            border: "min(0.5vw, 4px) solid",
             borderColor: gameState.shotClock <= 0 ? "#ff0000" : (gameState.shotClock <= 5 ? "#ff0000" : "#ffff00"),
-            padding: "0 2rem",
-            borderRadius: "20px",
-            lineHeight: 1.2,
-            minWidth: "200px"
+            padding: "0 1.5vw",
+            borderRadius: "15px",
+            lineHeight: 1.1,
+            textAlign: "center"
           }}>
             {gameState.shotClock}
           </div>
         </div>
 
         {/* AWAY 팀 */}
-        <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "4rem", color: "#ff4444" }}>{gameState.awayName || "AWAY"}</div>
-          <div style={{ fontSize: "22rem", fontWeight: "bold", color: "#f00", lineHeight: 1 }}>{gameState.awayScore}</div>
+        <div style={{ textAlign: "center", flex: 1.4 }}>
+          <div style={{ fontSize: "min(5vw, 3rem)", color: "#ff4444", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: "1vh" }}>
+            {gameState.awayName || "AWAY"}
+          </div>
+          <div style={{ fontSize: "min(40vw, 42vh, 32rem)", fontWeight: "bold", color: "#f00", lineHeight: 0.9 }}>
+            {gameState.awayScore}
+          </div>
         </div>
 
       </div>
 
-      <div style={{ marginTop: "4rem", color: "#333", fontSize: "1.5rem" }}>GAME CODE: {id}</div>
+      <div style={{ marginTop: "3vh", color: "#333", fontSize: "min(2vh, 1.5rem)" }}>GAME CODE: {id}</div>
     </main>
   );
 }
